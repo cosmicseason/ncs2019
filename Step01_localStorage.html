@@ -7,6 +7,7 @@
 <body>
 <input type="text" id="inputMsg" placeholder="저장할 메세지 입력..."/>
 <button id="saveBtn">저장 하기</button>
+<button id="loadBtn">불러오기</button>
 <script src="js/jquery-3.3.1.js"></script>
 <script>
 	$("#saveBtn").click(function(){
@@ -15,6 +16,13 @@
 		//localStorage에 savedMsg 라는 키값으로 저장하기
 		localStorage.savedMsg=msg;
 		alert("저장 하였습니다.");
+	});
+
+	$("#loadBtn").click(function(){
+		//localStorage에 저장된 문자열을 읽어와서
+		var msg=localStorage.savedMsg;
+		//inut 요소의 vavue로 출력하기
+		$("#inputMsg").val(msg);
 	});
 </script>	
 </body>
