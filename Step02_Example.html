@@ -7,13 +7,16 @@
 	<title>Step02_Example.html</title>
 	<link rel="stylesheet" href="css/bootstrap.css"/>
 	<style>
-		canvas{
-			border: 1px solid red;
+		div.container{
+			width: 1000px;
+			margin: 0, auto;
 		}
 	</style>
 </head>
 <body>
-<canvas id="myCanvas" width="900" height="600"></canvas>
+<div class="container">
+	<canvas id="myCanvas" width="900" height="600">a</canvas>
+</div>
 
 <script src="js/jquery-3.3.1.js"></script>
 <script src="js/bootstrap.js"></script>
@@ -24,36 +27,64 @@
 	var context=canvas.getContext("2d");
 
 	//이미지 로딩하기
-	var rabbitImg=new Image(); //토끼 이미지
+	var rabbit1=new Image(); //토끼 이미지
+	var rabbit2=new Image();
+	var rabbitImg=[];
+	var rIndex=0;
+	var rCount=0;
 	var bmgImg=new Image(); //배경 이미지
 	var snipeImg=new Image(); //스나이퍼 이미지
-	var hole=new Image(); //총알 구멍 이미지
+	var holeImg=new Image(); //총알 구멍 이미지
 	
-	rabbitImg.src="images/rabbit_1.png";
+	rabbit1.src="images/rabbit_1.png";
+	rabbit2.src="images/rabbit2.png";
+	rabbitImg=[rabbit1, rabbit2];
 	bmgImg.src="images/background.jpg";
 	snipeImg.src="images/snipe.png";
-	hole.src="images/hole.png"
+	holeImg.src="images/hole.png"
 	
 	//위치를 저장할 변수
-	var rabbitX=250; //토끼 위치
+	var rabbitX=250; //토끼 위치 초기값
 	var rabbitY=250;
-	var snipeX=250; //스나이퍼 위치
+	var snipeX=250; //스나이퍼 위치 초기값
 	var snipeY=250;
+	var holes=[]; //총알구멍 위치 저장할 배열 선언
 
-	bmgImg.onload=function(){
-		context.drawImage(bmgImg, 0, 0, 900, 600); //배경
-		context.drawImage(rabbitImg, rabbitX, rabbitY, 100, 130); //토끼
-		
-	};
+	//음향 로딩
+	var fireSound=new Audio("sounds/fire.wav");//총소리 로딩하기
+	var screamSound=new Audio("sounds/birddie.mp3");//비명소리 로딩하기
+
 	//0.01초 간격으로 이미지 화면에 표시하는 함수 실행할 Interval 설정
 	setInterval(function(){
 			context.clearRect(0, 0, 900, 600);
 			//이미지 화면에 표시
+			context.drawImage(bmgImg, 0, 0, 900, 600); //배경			
+			context.drawImage(rabbitImg[rIndex], rabbitX, rabbitY, 100, 130); //토끼
 			context.drawImage(snipeImg, snipeX-50, snipeY-50, 100, 100); //스나이퍼
 
+			for(var i=0; i<holes.length; i++){ //총알구멍
+				var info=holes[i];
+				
+				context.drawImage(holeImg, info.x, info.y, 25, 25);
+			}
+			//rIndex값을 50초마다 변경하기 위한 카운트값 증가
+			rCount++;
+			//토끼 이미지를 토글하는 함수 호출
+			rabbitAni();
 		}, 
 	10);
-
+//토끼 이미지를 토글하기 위한 함수 등록
+	var rabbitAni=function(){
+		if(rCount%15==0){
+			if(rIndex==0){
+				rIndex++;
+			}else if(rIndex==1){
+				rIndex--;
+			}else{
+				rIndex==0;
+			}
+		}
+	};
 
 
 	//canvas위에 마우스가 오면 마우스의 좌표값을 해당 이미지의 위치를 저장한 변수에 전달
@@ -64,7 +95,27 @@
 		snipeY=e.offsetY;
 	});
 	$("#myCanvas").on("click", function(e){
-		context.clearRect(rabbitX, rabbitY, 100, 130);
+		
+		//클릭 이벤트 발생시 마우스 좌표값을 저장할 오브젝트 선언
+		var objHole={};
+		//이벤트 발생시 마우스 좌표값 오브젝트에 저장
+		objHole.x=e.offsetX;
+		objHole.y=e.offsetY;
+		//토끼를 다른곳으로 이동
+		if((objHole.x>rabbitX+10&&objHole.x<rabbitX+90)&&(objHole.y>rabbitY+10&&objHole.y<rabbitY+110)){
+			//음향효과
+			//총소리
+			fireSound.currentTime=0; //연속 소리 설정
+			fireSound.play();
+			//비명소리
+			screamSound.play();
+
+			//토끼를 이동시킬 좌표값 랜덤 발생
+			rabbitX=Math.floor(Math.random()*800)+1;
+			rabbitY=Math.floor(Math.random()*450)+1;
+			//클릭 이벤트가 발생한 좌표값을 총알구멍 위치를 저장할 배열에 저장
+			holes.push(objHole);
+		}
 	});
 
 	
