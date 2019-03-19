@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Step02_Example.html</title>
+	<link rel="stylesheet" href="css/bootstrap.css"/>
+	<style>
+		div.container{
+			width: 1000px;
+			margin: 0, auto;
+		}
+	</style>
+</head>
+<body>
+<div class="container">
+	<canvas id="myCanvas" width="900" height="600">a</canvas>
+</div>
+
+<script src="js/jquery-3.3.1.js"></script>
+<script src="js/bootstrap.js"></script>
+<script>
+/**********************************************
+ 	canvas 초기 설정                                
+ **********************************************/
+	//canvas 요소의 참조값 얻어오기
+	var canvas=document.querySelector("#myCanvas");
+	//canvas 에 렌더딩 할수 있는 객체의 참조값 얻어오기
+	var context=canvas.getContext("2d");
+
+/***********************************************
+	이미지 로딩
+************************************************/
+	//for 배경 이미지
+	var bmgImg=new Image();
+
+	bmgImg.src="images/background.jpg";
+	//for 토끼 이미지
+	var rabbit1=new Image();
+	var rabbit2=new Image();
+	var rabbitImg=[];
+	var rIndex=0;
+	var rCount=0;
+
+	rabbit1.src="images/rabbit_1.png";
+	rabbit2.src="images/rabbit2.png";
+	rabbitImg=[rabbit1, rabbit2];
+
+	//for 토끼 파편
+	/*for(var i=0; i<5; i++){
+		var rPart=new Image();
+		rPart.src="images/r" + i +".png";
+		rPartImg.push(rPart);
+
+	}*/
+
+	var rPartImg0 = new Image();
+	var rPartImg1 = new Image();
+	var rPartImg2 = new Image();
+	var rPartImg3 = new Image();
+	var rPartImg4 = new Image();
+
+	rPartImg0.src="images/r0.png";
+	rPartImg1.src="images/r1.png";
+	rPartImg2.src="images/r2.png";
+	rPartImg3.src="images/r3.png";
+	rPartImg4.src="images/r4.png";
+
+	rPartImg = [rPartImg0, rPartImg1, rPartImg2, rPartImg3, rPartImg4];
+
+	//for 스나이퍼 이미지
+	var snipeImg=new Image();
+
+	snipeImg.src="images/snipe.png";
+
+	//for 총알 구멍 이미지
+	var holeImg=new Image();
+		
+	holeImg.src="images/hole.png"
+
+	//피 이미지를 저장할 배열
+	var bloodImgs=[];
+	
+	for(var i=0;i<6;i++){
+		var tmp=new Image();
+		tmp.src="images/blood"+i+".png";
+		bloodImgs.push(tmp);
+	}
+	//피의 위치를 저장할 변수
+	var bloodX=0, bloodY=0;
+	//피 애니메이션이 진행중인지 여부
+	var isBlood=false;
+	//피의현재 이미지 인덱스
+	var bloodIndex=0;
+
+	
+/*************************************************
+	이미지 위치를 저장 하기 위한 변수 설정
+**************************************************/	
+	//for 토끼 위치
+	var rabbitX=250; 
+	var rabbitY=250;
+	//for 토끼 파편 정보를 저장할 오브젝트
+	var rPartInfo=[];
+	//for 스나이퍼 위치
+	var snipeX=250; 
+	var snipeY=250;
+	//for 총알의 반동
+	var banY=0;
+	//총알구멍 위치를 저장할 배열
+	var holes=[];
+	//총알 장전여부를 확인
+	var isReady=true;
+
+/***************************************************
+	음향 로딩
+****************************************************/
+	//총소리 로딩
+	var fireSound=new Audio("sounds/fire.wav");
+	//비명소리 로딩
+	var screamSound=new Audio("sounds/birddie.mp3");
+	//총의 장전소리 로딩
+	var jangSound=new Audio("sounds/jang.wav");
+
+/****************************************************
+	canvas에 이미지 로딩
+*****************************************************/	
+	//0.01초 간격으로 이미지를 화면에 표시하는 Interval 함수 설정
+	setInterval(function(){
+			//전체 화면 지우기
+			context.clearRect(0, 0, 900, 600);
+			//배경 이미지 화면에 표시
+			context.drawImage(bmgImg, 0, 0, 900, 600);			
+			//토끼 파편 이미지 그리기
+			for(var i=0; i<rPartInfo.length; i++){
+				var tmp=rPartInfo[i];
+				//context의 현재 상태를 저장(조작하지 않은 정상상태)
+				context.save();
+				//context를 파편이 위치해야 하는곳으로 평행이동
+				context.translate(tmp.x, tmp.y);
+				//context르 파편이 회전해야 하는 각만큼 회전
+				context.rotate(tmp.angle);
+				//파편을 원점에 그린다.
+				context.drawImage(rPartImg[tmp.index], -50, -50, 100, 130);
+				//다음번 작업을 위해서 context를 저장된 상태로 되돌리기
+				context.restore();
+			}
+
+			//토끼 이미지 화면에 표시
+			context.drawImage(rabbitImg[rIndex], rabbitX, rabbitY, 100, 130);		
+			rCount++; //--> rIndex값을 50초마다 변경하기 위한 카운트값 증가			
+			rabbitAni();//--> 토끼 이미지를 토글하는 함수 호출
+
+			//피 그리기
+			if(isBlood){
+				context.drawImage(bloodImgs[bloodIndex], bloodX-25, bloodY-25, 50, 50);
+			}
+			//파편 움직이는 함수 호출
+			moveFragment();
+			//화면을 벗어난 파편은 제거하는 함수 호출
+			checkFragment();
+			//스나이퍼 이미지 화면에 표시
+			context.drawImage(snipeImg, snipeX-50, snipeY-50-banY, 100, 100);
+				
+			//총알구멍 이미지 화면에 표시
+			for(var i=0; i<holes.length; i++){
+				
+				var info=holes[i]; // 총알구멍 이미지를 표시할 좌표값을 배열에서 가져오기	
+				context.drawImage(holeImg, info.x, info.y, 25, 25);
+			}
+			//총 반동 애니
+			banAni();
+			//피 애니메이션 처리
+			bloodAni();
+		}, 
+	10);
+
+	//토끼 이미지를 토글하기 위한 함수 등록
+	var rabbitAni=function(){
+		if(rCount%15==0){
+			if(rIndex==0){
+				rIndex++;
+			}else if(rIndex==1){
+				rIndex--;
+			}else{
+				rIndex==0;
+			}
+		}
+	};
+
+	//토끼 파편을 움직이는 함수
+	var moveFragment=function(){
+		//반복문 돌면서
+		for(var i=0; i<rPartInfo.length; i++){
+			//i번째 파편 정보를 불러와서
+			var tmp=rPartInfo[i];
+			//speedX값 만큼 파편의 x 좌표를 변화 시키고
+			tmp.x = tmp.x + tmp.speedX;
+			//speedY값 만큼 파편의 y 좌표를 변화 시킨다.
+			tmp.y = tmp.y + tmp.speedY;
+			//angleSpeed 만큼 angle 를 변화 시킨다.
+			tmp.angle = tmp.angle + tmp.angleSpeed;
+			//화면을 벗어났는지 여부를 체크한다.
+			tmp.isOut = tmp.x>850||
+						tmp.x<-50||
+						tmp.y>550||
+						tmp.y<-50;
+		}
+	}
+
+	var checkFragment=function(){
+		//배열의 마지막번째 방번호 부터 시작해서 방번호를 1씩 감소
+		//시키며서 반복문을 수행한다.
+		for(var i=rPartInfo.length-1; i>0; i--){
+			//i 번째 파편 객체를 불러와서
+			var tmp=rPartInfo[i];
+			//만일 화면을 벗어난 파편 객체이면
+			if(tmp.isOut){
+				//배열의 i 번째 방에서 부터 1개를 제거한다.
+				rPartInfo.splice(i, 1);
+			}
+		}
+	}
+
+	var banAni=function(){
+		if(isReady){//총을 쏠 준비가 되어 있으면
+			return; //함수를 여기서 끝내라
+
+		}
+		//반동값을 3씩 감소 시킨다.
+		banY -=1;
+		if(banY == 0){//반동값이 0 이되면
+			//총을 쏠수 있는 상태로 바꿔주고
+			isReady=true;
+			//효과음을 재생한다.
+			jangSound.currentTime=0;
+			jangSound.play();
+		}
+	}
+
+	var bloodAni=function(){
+		if(isBlood==false){
+			return;
+		}
+
+		bloodIndex++;
+		if(bloodIndex==6){
+			bloodIndex=0;
+			isBlood=false;
+		}
+	}
+/*****************************************************************
+	스나이퍼 이미지가 마우스를 따라다니도록 이벤트 등록
+******************************************************************/
+	//canvas위에 마우스가 오면 마우스의 좌표값을 해당 이미지의 위치를 저장한 변수에 전달
+	$("#myCanvas").on("mousemove", function(e){
+		//마우스 이벤트가 일어난 곳의 좌표를 그림의 좌표에 반영하기
+		//스나이프
+		snipeX=e.offsetX;
+		snipeY=e.offsetY;
+	});
+
+/******************************************************************
+	토끼를 클릭하면 총알 구멍을 띄우고 음향효과 출력할 이벤트 등록
+*******************************************************************/	
+	$("#myCanvas").on("click", function(e){
+		
+		if(isReady == false){ //총을 쏠 준비가 되지 않았으면
+			return; // 함수를 여기서 끝내기
+		}
+		//총의 준비 상태를 바꿔준다.
+		isReady=false;
+		//스나이프의 반동값 부여하기
+		banY=50;
+
+		//클릭 이벤트 발생시 마우스 좌표값을 저장할 오브젝트 선언
+		var objHole={};
+		//이벤트 발생시 마우스 좌표값 오브젝트에 저장
+		objHole.x=e.offsetX;
+		objHole.y=e.offsetY;
+		//토끼 파편을 만든다(파편정보를 object에 담아서 배열에 저장)
+		for(var i=0; i<5; i++){
+			var rFrag={};
+
+			rFrag.index = i; //파편의 종류
+			rFrag.x = rabbitX; //파편의 초기 x 좌표
+			rFrag.y = rabbitY; //파편의 초기 y 좌표
+			rFrag.speedX = Math.random()*20-10; // -10~10사이의 실수
+			rFrag.speedY = Math.random()*20-10; // -10~10사이의 실수
+			rFrag.isOut=false; //화면을 벗어 났는지 여부
+			rFrag.angle=0; //회전각도
+			rFrag.angleSpeed=Math.random()-0.5; //회전 각속도
+			//배열에 저장
+			rPartInfo.push(rFrag);
+		}
+
+
+		//클릭 한 마우스 좌표가 토끼 좌표 안에 있을 경우 토끼를 다른곳으로 이동하도록 설정
+		var isRabbitDie = objHole.x>rabbitX+10&&
+						  objHole.x<rabbitX+90&&
+						  objHole.y>rabbitY+10&&
+						  objHole.y<rabbitY+110;		
+		if(isRabbitDie){
+			//총소리
+			fireSound.currentTime=0; //연속 소리 설정
+			fireSound.play();
+			//비명소리
+			screamSound.play();
+
+			//토끼를 이동시킬 좌표값 랜덤 발생
+			rabbitX=Math.random()*800;
+			rabbitY=Math.random()*450;
+			
+			//총알구멍을 띄우기 위해 클릭 이벤트가 발생한 좌표값을 배열에 저장
+			holes.push(objHole);
+
+			//피 애니메이션 시작
+			bloodX=e.offsetX;
+			bloodY=e.offsetY;
+
+			isBlood=true;
+		}
+	});
+	
+</script>	
+</body>
+</html>

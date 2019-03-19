@@ -12,9 +12,15 @@
 <body>
 <canvas id="myCanvas" width="500" height="500"></canvas>
 <script>
+<<<<<<< HEAD
 	//cnavas 요소의 참조값 얻어오기
 	var canvas=document.querySelector("#myCanvas");
 	//canvas에 렌더링 할수 있는 객체의 참조값 얻어오기
+=======
+	//canvas 요소의 참조값 얻어오기
+	var canvas=document.querySelector("#myCanvas");
+	//canvas 에 렌더딩 할수 있는 객체의 참조값 얻어오기
+>>>>>>> e5743be6ef966eed1054ccfcc5235badbb388a8b
 	var context=canvas.getContext("2d");
 
 	//선의 색상 지정
@@ -26,6 +32,7 @@
 	//선의 교차점을 둥글게
 	context.lineJoin="round";
 
+<<<<<<< HEAD
 	context.beginPath(); //경로 시작
 	context.moveTo(100, 100); // 시작점 지정
 	context.lineTo(250, 250); //이을점 지정
@@ -41,6 +48,24 @@
 	context.strkeStyle="#ffff00";
 	//외곽선만 있는 사각형 그리기
 	context.strokeRect(100,300,100,100);
+=======
+	context.beginPath();//경로 시작
+	context.moveTo(100, 100); //시작점 지정
+	context.lineTo(250, 250); //이을점 지정
+	context.lineTo(500, 0); //이을점 지정2
+	context.stroke(); //그리기 
+
+	//체우는 색 지정
+	context.fillStyle="#ff00ff";
+	//색이 체워진 사각형 그리기 
+	// .fillRect(x, y, width, height)
+	context.fillRect(300, 300, 100, 100);
+
+	//stroke 색상 바꾸기 
+	context.strokeStyle="#ffff00";
+	//외곽선만 있는 사각형 그리기
+	context.strokeRect(100, 300, 100, 100);
+>>>>>>> e5743be6ef966eed1054ccfcc5235badbb388a8b
 </script>	
 </body>
 </html>
